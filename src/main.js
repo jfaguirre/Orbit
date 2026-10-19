@@ -45,7 +45,7 @@ const spawnEnemy = (type, x, y) => {
 const addShake = (n) => { shake = Math.max(shake, n); };
 
 // Control de niveles
-loadLevel(2);
+loadLevel(0);
 
 function startBoss() {
   bossLocked = true;
