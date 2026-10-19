@@ -1,6 +1,7 @@
 import { W, H, GROUND } from './config.js';
 import { Boss } from './boss.js';
 import { createCatacumbas } from './level2.js';
+import { createPantano } from './level3.js';
 
 // Generador pseudoaleatorio con semilla: el escenario siempre sale igual
 function rng(seed) {
@@ -186,4 +187,4 @@ function createCementerio() {
 }
 
 // Cada nivel es una función que crea su escenario.
-export const levels = [createCementerio, createCatacumbas];
+export const levels = [createCementerio, createCatacumbas, createPantano];

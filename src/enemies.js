@@ -301,6 +301,127 @@ class Skull extends Enemy {
 }
 
 
+// 7. Platillo volador: llega, dispara 3 láseres, cambia de lugar, dispara otra vez,
+//    embiste al jugador y, si falla, sale del escenario
+class Ufo extends Enemy {
+  constructor(x, y) {
+    super(x, y, 7, 3);
+    this.plan = ['fire', 'move', 'fire', 'charge'];
+    this.step = 0;
+    this.state = 'enter';
+    this.timer = 0;
+    this.shotsLeft = 0;
+    this.tx = null;
+    this.ty = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.color = '120,255,160';
+  }
+
+  pickSpot(w) {
+    this.tx = w.camX + 150 + Math.random() * (W - 190);
+    this.ty = 25 + Math.random() * 85;
+  }
+
+  next(w) {
+    const s = this.plan[this.step++];
+    if (s === 'fire') { this.state = 'aim'; this.timer = 0.6; }
+    else if (s === 'move') { this.pickSpot(w); this.state = 'move'; }
+    else { this.state = 'warn'; this.timer = 0.6; }
+  }
+
+  update(dt, w) {
+    this.tick(dt);
+    const p = w.player;
+    if (this.tx === null) this.pickSpot(w);
+
+    if (this.state === 'enter' || this.state === 'move') {
+      this.x += (this.tx - this.x) * Math.min(1, dt * 2.5);
+      this.y += (this.ty - this.y) * Math.min(1, dt * 2.5);
+      if (Math.hypot(this.tx - this.x, this.ty - this.y) < 4) this.next(w);
+    } else if (this.state === 'aim') {
+      this.timer -= dt;
+      this.y += Math.sin(this.age * 6) * 8 * dt;
+      if (this.timer <= 0) { this.state = 'fire'; this.shotsLeft = 3; this.timer = 0; }
+    } else if (this.state === 'fire') {
+      this.timer -= dt;
+      if (this.timer <= 0) {
+        if (this.shotsLeft > 0) {
+          const a = Math.atan2(p.y - this.y, p.x - this.x);
+          w.enemyShots.push(new EnemyShot(this.x, this.y + 3, a, 140, 'laser'));
+          this.shotsLeft--;
+          this.timer = 0.22;
+        } else {
+          this.state = 'pause';
+          this.timer = 0.35;
+        }
+      }
+    } else if (this.state === 'pause') {
+      this.timer -= dt;
+      if (this.timer <= 0) this.next(w);
+    } else if (this.state === 'warn') {
+      this.timer -= dt;
+      this.x += (Math.random() - 0.5) * 0.6; // vibra antes de embestir
+      if (this.timer <= 0) {
+        const a = Math.atan2(p.y - this.y, p.x - this.x);
+        this.vx = Math.cos(a) * 210;
+        this.vy = Math.sin(a) * 210;
+        this.state = 'dash';
+      }
+    } else if (this.state === 'dash') {
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      if (this.x < w.camX - 40 || this.x > w.camX + W + 60 || this.y < -30 || this.y > GROUND + 20) this.alive = false;
+    }
+  }
+
+  draw(ctx, camX) {
+    const x = Math.round(this.x - camX);
+    const y = Math.round(this.y);
+    if (x < -20 || x > W + 20) return;
+    const alert = this.state === 'aim' || this.state === 'warn' || this.state === 'dash';
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = alert ? 'rgba(255,80,80,0.22)' : 'rgba(120,255,160,0.15)';
+    ctx.beginPath(); ctx.ellipse(x, y + 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = this.tint('#7fd8e8');
+    ctx.beginPath(); ctx.arc(x, y - 1, 5, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = this.tint('#59657a');
+    ctx.beginPath(); ctx.ellipse(x, y + 1, 9, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = this.tint('#3a4456');
+    ctx.beginPath(); ctx.ellipse(x, y + 3, 6, 2, 0, 0, Math.PI * 2); ctx.fill();
+    for (let i = -1; i <= 1; i++) {
+      ctx.fillStyle = Math.abs(Math.floor(this.age * 8) + i) % 2 === 0 ? '#ffe066' : (alert ? '#ff5a5a' : '#6aff9a');
+      ctx.fillRect(x + i * 5 - 1, y + 1, 2, 1);
+    }
+  }
+}
+
+// 8. Murciélago cazador: persigue al jugador (lo suelta el jefe del nivel 3)
+class HuntBat extends Bat {
+  constructor(x, y) {
+    super(x, y);
+    this.vx = 0;
+    this.vy = 0;
+    this.color = '255,90,90';
+  }
+
+  update(dt, w) {
+    this.tick(dt);
+    const p = w.player;
+    const dx = p.x - this.x;
+    const dy = p.y - this.y;
+    const d = Math.hypot(dx, dy) || 1;
+    this.vx += ((dx / d) * 70 - this.vx) * Math.min(1, dt * 2.5);
+    this.vy += ((dy / d) * 70 - this.vy) * Math.min(1, dt * 2.5);
+    this.x += this.vx * dt;
+    this.y += this.vy * dt + Math.sin(this.age * 9) * 0.6;
+    if (this.age > 9) this.alive = false; // se disipa si no te alcanza
+  }
+}
+
+
 export function createEnemy(type, x, y) {
   switch (type) {
     case 'bat': return new Bat(x, y);
@@ -309,6 +430,8 @@ export function createEnemy(type, x, y) {
     case 'idol': return new Idol(x);
     case 'spider': return new Spider(x);
     case 'skull': return new Skull(x, y);
+    case 'ufo': return new Ufo(x, y);
+    case 'huntbat': return new HuntBat(x, y);
     default:
       console.warn(`Enemigo desconocido: ${type}`);
       return null;

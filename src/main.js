@@ -43,7 +43,9 @@ const spawnEnemy = (type, x, y) => {
   if (e) spawnQueue.push(e);
 };
 const addShake = (n) => { shake = Math.max(shake, n); };
-loadLevel(0);
+
+// Control de niveles
+loadLevel(2);
 
 function startBoss() {
   bossLocked = true;
@@ -100,7 +102,7 @@ function update(dt) {
     }
 
     // Actualizar entidades
-    const world = { player, enemyShots, camX, spawn: spawnEnemy, shake: addShake };
+    const world = { player, enemyShots, camX, spawn: spawnEnemy, shake: addShake, hurt: hurtPlayer };
     const currentEnemies = enemies.slice();
     for (const e of currentEnemies) {
       if (e.alive) e.update(dt, world);
@@ -117,7 +119,8 @@ function update(dt) {
     for (const s of shots) {
       if (!s.alive) continue;
       for (const e of enemies) {
-        if (!e.alive || !overlap(s, e)) continue;
+        // if (!e.alive || !overlap(s, e)) continue;
+        if (!e.alive || e.intangible || !overlap(s, e)) continue;
         e.damage(1);
         s.alive = false;
         particles.burst(s.x, s.y, '79,216,255', 5, 70);
@@ -134,7 +137,8 @@ function update(dt) {
 
     // Daño al jugador (la embestida lo hace invulnerable)
     const hb = player.hurtbox;
-    for (const e of enemies) if (e.alive && overlap(hb, e)) hurtPlayer();
+    //for (const e of enemies) if (e.alive && overlap(hb, e)) hurtPlayer();
+    for (const e of enemies) if (e.alive && !e.intangible && overlap(hb, e)) hurtPlayer();
     for (const s of enemyShots) {
       if (s.alive && overlap(hb, s)) { s.alive = false; hurtPlayer(); }
     }

@@ -38,13 +38,17 @@ export class PlasmaShot {
 }
 
 // Disparo de los enemigos
+// kind: 'orb' (naranja), 'laser' (verde, del platillo) o 'wave' (arco de luz, del fantasma)
 export class EnemyShot {
-  constructor(x, y, angle, speed = 80) {
+    constructor(x, y, angle, speed = 80, kind = 'orb', scale = 1) {
     this.x = x;
     this.y = y;
+    this.angle = angle;
+    this.kind = kind;
+    this.scale = scale; // tamaño del arco (solo para 'wave')
     this.vx = Math.cos(angle) * speed;
     this.vy = Math.sin(angle) * speed;
-    this.r = 2.5;
+    this.r = kind === 'wave' ? 8 * scale : kind === 'laser' ? 3 : 2.5;
     this.alive = true;
   }
 
@@ -61,12 +65,38 @@ export class EnemyShot {
     const y = Math.round(this.y);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = 'rgba(255, 90, 60, 0.25)';
-    ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ff6a3d';
-    ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ffe2b8';
-    ctx.fillRect(x - 1, y - 1, 2, 2);
+    if (this.kind === 'laser') {
+      ctx.translate(x, y);
+      ctx.rotate(this.angle);
+      ctx.fillStyle = 'rgba(120, 255, 150, 0.25)';
+      ctx.fillRect(-8, -3, 16, 6);
+      ctx.fillStyle = '#7dff9a';
+      ctx.fillRect(-6, -1, 12, 2);
+      ctx.fillStyle = '#eafff0';
+      ctx.fillRect(-5, 0, 10, 1);
+      } else if (this.kind === 'wave') {
+      const k = this.scale;
+      ctx.translate(x, y);
+      ctx.rotate(this.angle);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(255, 240, 170, 0.25)';
+      ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(-6 * k, 0, 12 * k, -1.0, 1.0); ctx.stroke();
+      ctx.strokeStyle = '#fff3b0';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(-6 * k, 0, 12 * k, -1.0, 1.0); ctx.stroke();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(-6 * k, 0, 12 * k, -1.0, 1.0); ctx.stroke();
+    } else {
+      ctx.fillStyle = 'rgba(255, 90, 60, 0.25)';
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ff6a3d';
+      ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffe2b8';
+      ctx.fillRect(x - 1, y - 1, 2, 2);
+    }
     ctx.restore();
   }
 }
+

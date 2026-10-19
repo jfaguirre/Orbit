@@ -7,6 +7,7 @@ const BASE = import.meta.env.BASE_URL.endsWith('/')
 export const TRACKS = {
   level1: `${BASE}music/nivel1.mp3`,
   level2: `${BASE}music/nivel2.mp3`,
+  level3: `${BASE}music/nivel3.mp3`,
   boss: `${BASE}music/boss.mp3`,
 };
 
@@ -292,6 +293,8 @@ class AudioManager {
       this.play(level);
     } else if (level === 1) {
       this.play('level2');
+    } else if (level === 2) {
+      this.play('level3');
     } else {
       this.play('level1');
     }
