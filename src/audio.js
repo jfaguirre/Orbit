@@ -1,8 +1,7 @@
 // Gestor de audio (Música de fondo y Efectos de sonido SFX) para Plasma Orb
 
-const BASE = import.meta.env.BASE_URL.endsWith('/')
-  ? import.meta.env.BASE_URL
-  : `${import.meta.env.BASE_URL}/`;
+const envBase = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/';
+const BASE = envBase.endsWith('/') ? envBase : `${envBase}/`;
 
 export const TRACKS = {
   level1: `${BASE}music/nivel1.mp3`,
@@ -38,7 +37,7 @@ class SoundEffectsManager {
 
   _init() {
     try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const AudioCtx = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
       if (AudioCtx) {
         this.ctx = new AudioCtx();
         this.gainNode = this.ctx.createGain();
@@ -229,6 +228,7 @@ class AudioManager {
     this.fadeInterval = null;
 
     // Desbloquear audio en la primera interacción del usuario (política autoplay del navegador)
+    if (typeof window === 'undefined') return;
     const unlock = () => {
       sfxManager.resume();
       if (this.targetTrack && (!this.audio || this.audio.paused)) {
@@ -245,7 +245,7 @@ class AudioManager {
   _getAudio() {
     if (!this.audio) {
       try {
-        this.audio = new Audio();
+        this.audio = typeof Audio !== 'undefined' ? new Audio() : null;
         this.audio.loop = true;
       } catch (_) {}
     }

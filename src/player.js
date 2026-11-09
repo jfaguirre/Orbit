@@ -1,16 +1,16 @@
-import { GROUND } from './config.js';
+import { GROUND, PLAYER_CONFIG } from './config.js';
 import { input } from './input.js';
 import { PlasmaShot } from './projectile.js';
 import { sfx } from './audio.js';
 
-const ACCEL = 700;        // qué tan rápido arranca
-const DAMPING = 4.5;      // menor = más "resbaladizo" (efecto plasma)
-const MAX_SPEED = 90;
-const DASH_SPEED = 280;
-const DASH_TIME = 0.15;   // 280 * 0.15 ≈ 42 px de embestida
-const DASH_COOLDOWN = 0.52;
-const SHOOT_COOLDOWN = 0.16;
-const INVULN_TIME = 0.9;   // segundos de invulnerabilidad tras recibir daño
+const ACCEL = PLAYER_CONFIG.movement.accel;
+const DAMPING = PLAYER_CONFIG.movement.damping;
+const MAX_SPEED = PLAYER_CONFIG.movement.maxSpeed;
+const DASH_SPEED = PLAYER_CONFIG.dash.speed;
+const DASH_TIME = PLAYER_CONFIG.dash.duration;
+const DASH_COOLDOWN = PLAYER_CONFIG.dash.cooldown;
+const SHOOT_COOLDOWN = PLAYER_CONFIG.combat.shootCooldown;
+const INVULN_TIME = PLAYER_CONFIG.combat.invulnerabilityTime;
 
 export class Player {
   constructor(x, y) {
@@ -18,10 +18,10 @@ export class Player {
     this.y = y;
     this.vx = 0;
     this.vy = 0;
-    this.r = 6;
+    this.r = PLAYER_CONFIG.stats.radius;
     this.facing = 1;
-    this.hp = 5;
-    this.maxHp = 5;
+    this.hp = PLAYER_CONFIG.stats.initialHp;
+    this.maxHp = PLAYER_CONFIG.stats.maxHp;
     this.invuln = 0;
     this.dashTimer = 0;
     this.dashCd = 0;
@@ -36,15 +36,15 @@ export class Player {
   get dashing() { return this.dashTimer > 0; }
 
   // Hitbox más pequeña que el dibujo: más justo para el jugador
-  get hurtbox() { return { x: this.x, y: this.y, r: this.r - 2 }; }
+  get hurtbox() { return { x: this.x, y: this.y, r: this.r - PLAYER_CONFIG.stats.hurtboxMargin }; }
 
   // Devuelve true si realmente recibió el golpe
   hit() {
     if (this.invuln > 0 || this.dashing) return false;
     this.hp -= 1;
     this.invuln = INVULN_TIME;
-    this.vx = -this.facing * 120; // empujón
-    this.vy = -40;
+    this.vx = -this.facing * PLAYER_CONFIG.combat.recoilSpeed; // empujón
+    this.vy = -PLAYER_CONFIG.combat.recoilUpSpeed;
     return true;
   }
 
